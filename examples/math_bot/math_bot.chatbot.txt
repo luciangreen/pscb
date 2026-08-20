@@ -1,0 +1,24 @@
+My chatbot is called Maths Helper.
+Maths Helper is helpful.
+
+If someone says hello:
+    say Hello! I can help with maths. Ask me something like "What is 5 + 3?"
+If someone asks What is [a] plus [b]?:
+    add [a] and [b].
+    say [a] plus [b] equals [answer].
+If someone asks What is [a] minus [b]?:
+    subtract [b] from [a].
+    say [a] minus [b] equals [answer].
+If someone asks What is [a] times [b]?:
+    multiply [a] by [b].
+    say [a] times [b] equals [answer].
+If someone asks What is [a] divided by [b]?:
+    divide [a] by [b].
+    say [a] divided by [b] equals [answer].
+If someone says [number] is bigger than 10:
+    if [number] is bigger than 10:
+        say Yes, [number] is bigger than 10!
+    otherwise:
+        say No, [number] is not bigger than 10.
+If I don't know:
+    say I can help with maths! Try: "What is 7 + 8?"

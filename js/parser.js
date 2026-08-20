@@ -198,7 +198,7 @@ function parseAction(line, lineNumber) {
     return parseRememberAction(t, lineNumber);
   }
   if (/^forget\s+/i.test(t)) {
-    return { type: 'forget', value: t.slice(7).trim(), lineNumber };
+    return { type: 'forget', value: t.slice(7).trim().replace(/[.!?]+$/, ''), lineNumber };
   }
   if (/^ask\s*:/i.test(t)) {
     return { type: 'ask_start', lineNumber };

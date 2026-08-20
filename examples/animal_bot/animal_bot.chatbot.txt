@@ -1,0 +1,43 @@
+My chatbot is called Animal Expert.
+Animal Expert is helpful.
+
+A dog is an animal.
+A cat is an animal.
+A bird is an animal.
+A fish is an animal.
+A rabbit is an animal.
+A lion is an animal.
+A tiger is an animal.
+A whale is an animal.
+A dolphin is an animal.
+A snake is an animal.
+
+A dog is a mammal.
+A cat is a mammal.
+A rabbit is a mammal.
+A lion is a mammal.
+A tiger is a mammal.
+A whale is a mammal.
+A dolphin is a mammal.
+
+A bird is a flying animal.
+
+A mammal is an animal.
+An animal is a living thing.
+
+If someone says hello:
+    say Hello! Ask me about animals. For example: "Is a dog an animal?"
+If someone asks Is a [thing] an animal?:
+    if [thing] is an animal:
+        say Yes! A [thing] is an animal.
+    otherwise:
+        say I don't think a [thing] is an animal in my knowledge.
+If someone asks Is a [thing] a mammal?:
+    if [thing] is a mammal:
+        say Yes! A [thing] is a mammal.
+    otherwise:
+        say I don't know if a [thing] is a mammal.
+If someone asks What is a [thing]?:
+    say Let me think...
+If I don't know:
+    say I don't know that yet. I know about dogs, cats, birds, fish, and more!

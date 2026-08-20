@@ -1,0 +1,28 @@
+My chatbot is called Sam.
+Sam is friendly.
+
+If someone says hello:
+    say one of:
+        Hello! I am Sam. How can I help?
+        Hi there! What can I do for you?
+        Hello! Nice to meet you.
+If someone says good morning:
+    say Good morning! I hope you have a wonderful day.
+If someone says goodbye:
+    say Goodbye! See you next time.
+If someone says bye:
+    say Bye! Take care.
+If someone says thank you:
+    say You're welcome! Happy to help.
+If someone says thanks:
+    say No problem at all!
+If someone says My name is [name]:
+    remember their name is [name].
+    say Hello [name]! Great to meet you.
+If someone asks What is my name?:
+    if we know their name:
+        say Your name is [name].
+    otherwise:
+        say I don't know your name yet. Tell me with "My name is ...".
+If I don't know:
+    say I am not sure about that. Try saying hello!
