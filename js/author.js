@@ -77,12 +77,11 @@ function createAuthor(opts) {
     liveValidate();
   }
 
-  // Force immediate validation
-  function validate_now() {
+  function validateNow() {
     liveValidate();
   }
 
-  return { getSource, setSource, validate_now, renderDiagnostics };
+  return { getSource, setSource, validateNow, renderDiagnostics };
 }
 
 /**

@@ -88,7 +88,13 @@ function matchPattern(pattern, input) {
     const re = new RegExp(regexStr, 'i');
     // First check structural match on normalised input
     if (!normInput.match(re)) return null;
-    // Extract values from original input to preserve caller's casing
+    // Both pipelines normalise contractions, trim, collapse whitespace, and
+    // strip trailing punctuation.  The structural match already confirmed
+    // `normInput` matches the regex.  We apply the same regex (with /i) to
+    // `origInput` to capture the caller's original casing.  If, due to
+    // differing punctuation collapsing, `origInput` does not match (rare edge
+    // case), we fall back to `normInput` groups, which will be lowercase.
+    // Either way callers should not depend on exact casing of captures.
     const m = origInput.match(re) || normInput.match(re);
     const bindings = {};
     for (let i = 0; i < varNames.length; i++) {

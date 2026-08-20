@@ -2,11 +2,10 @@ My chatbot is called Sam.
 Sam is friendly.
 
 If someone says hello:
-    say Hello! I am Sam. How can I help?
-If someone says hello:
-    say Hi there! What can I do for you?
-If someone says hi:
-    say Hello! Nice to meet you.
+    say one of:
+        Hello! I am Sam. How can I help?
+        Hi there! What can I do for you?
+        Hello! Nice to meet you.
 If someone says good morning:
     say Good morning! I hope you have a wonderful day.
 If someone says goodbye:

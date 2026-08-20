@@ -98,15 +98,6 @@ function buildRuntime(prog) {
   chatTitle.textContent = program.name || 'My Chatbot';
 }
 
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 // ---------------------------------------------------------------------------
 // Message rendering
 // ---------------------------------------------------------------------------
@@ -301,7 +292,7 @@ loadInput.addEventListener('change', () => {
     try {
       const loaded = loadBot(e.target.result);
       sourceEl.value = loaded.source;
-      author.validate_now();
+      author.validateNow();
       applySource(loaded.source);
     } catch (err) {
       appendSystem('Could not load file: ' + err.message);
@@ -347,7 +338,7 @@ clearMemBtn.addEventListener('click', () => {
 
 createRuleBuilder(rbContainer, (lines) => {
   sourceEl.value += '\n' + lines;
-  author.validate_now();
+  author.validateNow();
   // Switch to editor tab to show the insertion
   tabBtns.forEach(b => {
     b.classList.remove('active');
@@ -389,7 +380,7 @@ function updateInspector() {
         const label = f.type === 'negative'
           ? `${f.subject} is NOT ${f.object}`
           : `${f.subject} is a ${f.object}`;
-        return `<tr><td>${escHtml(label)}</td></tr>`;
+        return `<tr><td>${escapeHtml(label)}</td></tr>`;
       }).join('')
     }</tbody></table>` : ''}
   `;
@@ -400,7 +391,7 @@ function updateInspector() {
     : `<table class="memory-table">
         <thead><tr><th>Key</th><th>Value</th></tr></thead>
         <tbody>${memEntries.map(([k, v]) =>
-          `<tr><td>${escHtml(k.replace(/_/g, ' '))}</td><td>${escHtml(v)}</td></tr>`
+          `<tr><td>${escapeHtml(k.replace(/_/g, ' '))}</td><td>${escapeHtml(v)}</td></tr>`
         ).join('')}</tbody>
       </table>`;
 }
@@ -425,7 +416,7 @@ const author = createAuthor({
   sourceEl.value = DEFAULT_SOURCE;
   const prog = parse(DEFAULT_SOURCE);
   buildRuntime(prog);
-  author.validate_now();
+  author.validateNow();
 
   const greeting = runtime.chat('hello');
   lastReply = greeting;
