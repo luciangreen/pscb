@@ -63,9 +63,16 @@ function normaliseInput(text) {
  * Returns an object of bindings { varName: value } if matched, else null.
  */
 function matchPattern(pattern, input) {
-  // Normalise both
+  // Normalise both for structural matching
   const normPattern = normalise(expandContractions(pattern));
   const normInput = normaliseInput(input);
+
+  // Prepare original input (contractions expanded, whitespace normalised,
+  // trailing punctuation stripped) so captured values preserve original case.
+  const origInput = expandContractions(input)
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[?!.,;]+$/, '');
 
   // Extract variable names in order
   const varNames = [];
@@ -79,8 +86,10 @@ function matchPattern(pattern, input) {
 
   try {
     const re = new RegExp(regexStr, 'i');
-    const m = normInput.match(re);
-    if (!m) return null;
+    // First check structural match on normalised input
+    if (!normInput.match(re)) return null;
+    // Extract values from original input to preserve caller's casing
+    const m = origInput.match(re) || normInput.match(re);
     const bindings = {};
     for (let i = 0; i < varNames.length; i++) {
       bindings[varNames[i]] = m[i + 1].trim();

@@ -1,0 +1,22 @@
+My chatbot is called Quiz Bot.
+Quiz Bot is cheerful.
+
+If someone says hello:
+    say Hello! Welcome to the quiz. Type "start quiz" to begin!
+If someone says start quiz:
+    say Great! Here is your first question.
+    say Question 1: What is 5 + 5?
+    say Type your answer!
+If someone says 10:
+    say Correct! Well done!
+    say Question 2: What is the capital of France?
+If someone says Paris:
+    say Correct! Paris is the capital of France.
+    say Question 3: What do you call a baby dog?
+If someone says puppy:
+    say Correct! A baby dog is called a puppy.
+    say Well done! You finished the quiz.
+If someone says I don't know:
+    say That's okay! Have another try.
+If I don't know:
+    say I am not sure about that answer. Try again!

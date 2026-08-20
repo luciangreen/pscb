@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Primary School Chatbot</title>
+  <link rel="stylesheet" href="css/chatbot.css">
+</head>
+<body>
+
+<div class="app-wrapper" role="main" aria-label="Chatbot application">
+
+  <!-- ── Chat panel ─────────────────────────────────────────── -->
+  <div class="card" id="chat-panel">
+    <header class="chat-header">
+      <div class="chat-avatar" aria-hidden="true">🤖</div>
+      <span class="chat-title" id="chat-title">My Chatbot</span>
+      <button class="header-btn" id="new-chat-btn"
+              aria-label="Start a new conversation">New chat</button>
+      <button class="header-btn" id="author-toggle"
+              aria-label="Open author mode" aria-expanded="false"
+              aria-controls="author-panel">✏️ Edit</button>
+    </header>
+
+    <div class="chat-messages" id="messages"
+         role="log" aria-live="polite" aria-label="Conversation"
+         aria-relevant="additions"></div>
+
+    <div class="chat-input-row">
+      <label for="user-input" class="sr-only">Your message</label>
+      <input class="chat-input" id="user-input" type="text"
+             placeholder="Ask something…" autocomplete="off"
+             aria-label="Your message">
+      <button class="chat-send" id="send-btn"
+              aria-label="Send message">Send</button>
+    </div>
+  </div><!-- /chat-panel -->
+
+  <!-- ── Author panel ───────────────────────────────────────── -->
+  <div class="card" id="author-panel" aria-label="Author mode">
+
+    <div class="author-header">
+      <span style="font-size:1.25rem" aria-hidden="true">✏️</span>
+      <h2>Edit Your Chatbot</h2>
+      <button class="header-btn" id="clear-mem-btn"
+              aria-label="Clear chatbot memory">Clear memory</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="author-tabs" role="tablist" aria-label="Author mode sections">
+      <button class="author-tab active" role="tab"
+              data-tab="editor" id="tab-btn-editor"
+              aria-selected="true" aria-controls="tab-editor">Text editor</button>
+      <button class="author-tab" role="tab"
+              data-tab="builder" id="tab-btn-builder"
+              aria-selected="false" aria-controls="tab-builder">Rule builder</button>
+      <button class="author-tab" role="tab"
+              data-tab="inspector" id="tab-btn-inspector"
+              aria-selected="false" aria-controls="tab-inspector">Knowledge</button>
+      <button class="author-tab" role="tab"
+              data-tab="memory" id="tab-btn-memory"
+              aria-selected="false" aria-controls="tab-memory">Memory</button>
+    </div>
+
+    <!-- Tab: Text editor -->
+    <div class="tab-content active" id="tab-editor"
+         role="tabpanel" aria-labelledby="tab-btn-editor">
+      <div class="author-editor-area">
+        <label for="author-source" class="sr-only">Chatbot rules</label>
+        <textarea id="author-source"
+                  placeholder="Write your chatbot rules here…"
+                  aria-label="Chatbot rules source code"
+                  spellcheck="false"></textarea>
+        <div class="author-actions">
+          <button class="btn btn-primary" id="apply-btn"
+                  aria-label="Apply chatbot rules">▶ Apply</button>
+          <button class="btn btn-secondary" id="save-btn"
+                  aria-label="Save chatbot to file">⬇ Save</button>
+          <button class="btn btn-secondary" id="load-btn"
+                  aria-label="Load chatbot from file">⬆ Load</button>
+          <button class="btn btn-secondary" id="export-btn"
+                  aria-label="Export chatbot as web page">🌐 Export</button>
+        </div>
+        <input type="file" id="load-input" accept=".chatbot,.json"
+               class="sr-only" aria-label="Choose chatbot file">
+      </div>
+      <div class="diagnostics-area" id="diagnostics"
+           role="status" aria-live="polite" aria-label="Validation feedback"></div>
+    </div><!-- /tab-editor -->
+
+    <!-- Tab: Rule builder -->
+    <div class="tab-content" id="tab-builder"
+         role="tabpanel" aria-labelledby="tab-btn-builder">
+      <div class="rule-builder-area">
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem">
+          Use the form below to create a rule without typing. The rule will be
+          added to your chatbot's text editor.
+        </p>
+        <div id="rule-builder-container"></div>
+      </div>
+    </div><!-- /tab-builder -->
+
+    <!-- Tab: Knowledge inspector -->
+    <div class="tab-content" id="tab-inspector"
+         role="tabpanel" aria-labelledby="tab-btn-inspector">
+      <div class="inspector-area">
+        <div class="inspector-section" id="inspector-content">
+          <p style="font-size:0.85rem;color:var(--text-muted)">
+            Apply your rules to see what your chatbot knows.
+          </p>
+        </div>
+      </div>
+    </div><!-- /tab-inspector -->
+
+    <!-- Tab: Memory -->
+    <div class="tab-content" id="tab-memory"
+         role="tabpanel" aria-labelledby="tab-btn-memory">
+      <div class="inspector-area">
+        <div id="memory-content">
+          <p style="font-size:0.85rem;color:var(--text-muted)">
+            No information stored yet. Chat with your bot to fill its memory.
+          </p>
+        </div>
+      </div>
+    </div><!-- /tab-memory -->
+
+  </div><!-- /author-panel -->
+
+</div><!-- /app-wrapper -->
+
+<!--
+  Inline script sources so that export.js can embed them verbatim
+  into the exported standalone HTML page.
+  These are hidden elements only read by app.js / export.js.
+-->
+<script id="parser-src"    type="text/plain"    src="js/parser.js"></script>
+<script id="reasoning-src" type="text/plain"    src="js/reasoning.js"></script>
+<script id="memory-src"    type="text/plain"    src="js/memory.js"></script>
+<script id="runtime-src"   type="text/plain"    src="js/runtime.js"></script>
+
+<!-- Application scripts -->
+<script src="js/parser.js"></script>
+<script src="js/reasoning.js"></script>
+<script src="js/memory.js"></script>
+<script src="js/runtime.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/export.js"></script>
+<script src="js/author.js"></script>
+<script src="js/app.js"></script>
+
+<!-- Fetch JS sources for the exporter (requires a web server; gracefully
+     degrades to empty strings when opened directly from the file system) -->
+<script>
+(function loadSources() {
+  const ids = [
+    { id: 'parser-src',    path: 'js/parser.js' },
+    { id: 'reasoning-src', path: 'js/reasoning.js' },
+    { id: 'memory-src',    path: 'js/memory.js' },
+    { id: 'runtime-src',   path: 'js/runtime.js' }
+  ];
+  ids.forEach(({ id, path }) => {
+    fetch(path)
+      .then(r => r.text())
+      .then(src => {
+        document.getElementById(id).textContent = src;
+      })
+      .catch(() => { /* offline — export may embed partial source */ });
+  });
+})();
+</script>
+
+</body>
+</html>
