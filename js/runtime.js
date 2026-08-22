@@ -160,7 +160,7 @@ function evalCondition(cond, bindings, memory, engine) {
       return memory.has(cond.key) && memory.get(cond.key).toLowerCase() === cond.value.toLowerCase();
 
     case 'comparison': {
-      const raw = substitute(cond.subject, bindings, memory);
+      const raw = substitute('[' + cond.subject + ']', bindings, memory);
       const valRaw = substitute(cond.value, bindings, memory);
       const a = parseFloat(raw);
       const b = parseFloat(valRaw);
@@ -172,7 +172,7 @@ function evalCondition(cond, bindings, memory, engine) {
     }
 
     case 'is_a': {
-      const subj = substitute(cond.subject, bindings, memory).toLowerCase();
+      const subj = substitute('[' + cond.subject + ']', bindings, memory).toLowerCase();
       return engine.isA(subj, cond.object);
     }
 

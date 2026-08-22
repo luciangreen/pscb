@@ -405,10 +405,11 @@ function parse(source) {
     const trigger = parseTrigger(line);
     if (trigger) {
       if (trigger.type === 'fallback') {
+        const ruleLineNumber = i + 1;
         i++;
         const bodyLines = collectBody(indent);
         const actions = parseActionsFromBody(bodyLines, program, diag);
-        program.rules.push({ type: 'fallback', actions, lineNumber: i });
+        program.rules.push({ type: 'fallback', actions, lineNumber: ruleLineNumber });
         continue;
       }
 
@@ -484,6 +485,7 @@ function parse(source) {
     // ---- Inference rule: If something is a dog / animal ----
     const infMatch = line.match(/^[Ii]f\s+something\s+is\s+(?:an?\s+)?([a-zA-Z][a-zA-Z0-9 _'-]*):\s*$/i);
     if (infMatch) {
+      const infLineNumber = i + 1;
       i++;
       const bodyLines = collectBody(indent);
       const actions = parseActionsFromBody(bodyLines, program, diag);
@@ -491,7 +493,7 @@ function parse(source) {
         type: 'inference',
         ifCategory: infMatch[1].trim().toLowerCase(),
         actions,
-        lineNumber: i,
+        lineNumber: infLineNumber,
         orTriggers: []
       });
       continue;
