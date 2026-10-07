@@ -12,7 +12,7 @@ const path = require('path');
 const { parse, validate, extractVars, normaliseVarNames } = require('../js/parser');
 const { createEngine } = require('../js/reasoning');
 const { createMemory } = require('../js/memory');
-const { createRuntime, escapeHtml, normaliseInput, matchPattern, evalArithmetic } = require('../js/runtime');
+const { createRuntime, escapeHtml, normaliseInput, matchPattern, matchPatternWithAliases, evalArithmetic } = require('../js/runtime');
 const { saveBot, loadBot } = require('../js/storage');
 
 // ---------------------------------------------------------------------------
@@ -159,6 +159,18 @@ test('Parser: alias definition', () => {
   assert(prog.aliases['hello'].includes('hi'));
 });
 
+test('Parser: inference conclusion', () => {
+  const prog = parse('If something is a dog:\n    it is an animal.');
+  assertEqual(prog.rules[0].actions[0].type, 'infer_is_a');
+  assertEqual(prog.rules[0].actions[0].category, 'animal');
+});
+
+test('Parser: ask action keeps its question', () => {
+  const prog = parse('If someone says start:\n    ask: Which animal do you like?');
+  assertEqual(prog.rules[0].actions[0].type, 'ask');
+  assertEqual(prog.rules[0].actions[0].value, 'Which animal do you like?');
+});
+
 // ===========================================================================
 // 2. Validation tests
 // ===========================================================================
@@ -184,6 +196,11 @@ test('Validate: conflicting facts warns', () => {
     'Expected conflict warning for sky facts');
 });
 
+test('Validate: an entity can belong to multiple categories', () => {
+  const prog = parse('A dog is an animal.\nA dog is a mammal.');
+  assert(!prog.diagnostics.some(d => d.type === 'warning'));
+});
+
 // ===========================================================================
 // 3. Reasoning engine tests
 // ===========================================================================
@@ -201,12 +218,25 @@ test('Reasoning: transitive is_a', () => {
   assert(engine.isA('dog', 'living thing'));
 });
 
+test('Reasoning: inference rules chain with facts', () => {
+  const rt = makeRuntime('A poodle is a dog.\nIf something is a dog:\n    it is an animal.');
+  assertIncludes(chat(rt, 'Is a poodle an animal?').text.toLowerCase(), 'yes');
+});
+
 test('Reasoning: explicit negation', () => {
   const engine = createEngine([
     { type: 'is_a', subject: 'robot', predicate: 'is_a', object: 'animal' },
     { type: 'negative', subject: 'robot', predicate: 'is_a', object: 'animal' }
   ]);
   assert(!engine.isA('robot', 'animal'));
+});
+
+test('Reasoning: NOT condition requires an explicit negative fact', () => {
+  const src = 'If someone asks Is a [thing] an animal?:\n    if [thing] is not an animal:\n        say No.\n    otherwise:\n        say I do not know.';
+  const rt = makeRuntime(src);
+  assertIncludes(chat(rt, 'Is a square an animal?').text, 'do not know');
+  rt.reload(parse('A square is not an animal.\n' + src));
+  assertIncludes(chat(rt, 'Is a square an animal?').text, 'No');
 });
 
 test('Reasoning: categoriesOf', () => {
@@ -309,6 +339,18 @@ test('matchPattern: no match', () => {
   assert(r === null);
 });
 
+test('matchPattern: regex punctuation is treated literally', () => {
+  assert(matchPattern('what is 2 + 2?', 'what is 2 + 2?') !== null);
+  assert(matchPattern('what is 2 + 2?', 'what is 2 2') === null);
+});
+
+test('matchPatternWithAliases: matches author-defined phrases', () => {
+  const bindings = matchPatternWithAliases('[greeting]', 'hello', {
+    greeting: ['hello', 'hi there']
+  });
+  assert(bindings !== null);
+});
+
 // ===========================================================================
 // 6. Runtime — arithmetic
 // ===========================================================================
@@ -409,6 +451,40 @@ test('Runtime: OR trigger', () => {
   const r2 = chat(rt, 'hi');
   assertIncludes(r1.text, 'Hello');
   assertIncludes(r2.text, 'Hello');
+});
+
+test('Runtime: alias placeholder matches each equivalent phrase', () => {
+  const src = 'greeting means:\n    hello\n    hi there\nIf someone says [greeting]:\n    say Welcome!';
+  const rt = makeRuntime(src);
+  assertIncludes(chat(rt, 'hello').text, 'Welcome');
+  assertIncludes(chat(rt, 'hi there').text, 'Welcome');
+});
+
+test('Runtime: AND conditions check remembered properties', () => {
+  const src = 'If someone says My favourite colour is [colour]:\n    remember their colour is [colour].\n' +
+    'If someone says hello:\n    and the colour is brown:\n    say We both like brown.';
+  const rt = makeRuntime(src);
+  chat(rt, 'My favourite colour is brown');
+  assertIncludes(chat(rt, 'hello').text, 'both like brown');
+});
+
+test('Runtime: ask action displays its prompt', () => {
+  const rt = makeRuntime('If someone says start:\n    ask: Which animal do you like?');
+  assertIncludes(chat(rt, 'start').text, 'Which animal');
+});
+
+test('Runtime: score action updates visible memory', () => {
+  const rt = makeRuntime('If someone says correct:\n    score +1');
+  const result = chat(rt, 'correct');
+  assertEqual(rt.getMemory().score, '1');
+  assertIncludes(result.text, 'Score: 1');
+});
+
+test('Runtime: image action returns safe local images and rejects unsafe URLs', () => {
+  const local = makeRuntime('If someone says cat:\n    show image "images/cat.jpg"');
+  assertEqual(chat(local, 'cat').images[0], 'images/cat.jpg');
+  const unsafe = makeRuntime('If someone says cat:\n    show image "javascript:alert(1)"');
+  assert(!chat(unsafe, 'cat').images.length);
 });
 
 test('Runtime: is_a query', () => {

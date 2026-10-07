@@ -379,6 +379,8 @@ function updateInspector() {
       facts.map(f => {
         const label = f.type === 'negative'
           ? `${f.subject} is NOT ${f.object}`
+          : f.type === 'property'
+            ? `${f.subject} is ${f.object}`
           : `${f.subject} is a ${f.object}`;
         return `<tr><td>${escapeHtml(label)}</td></tr>`;
       }).join('')
