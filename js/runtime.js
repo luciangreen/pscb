@@ -76,10 +76,17 @@ function matchPattern(pattern, input) {
 
   // Extract variable names in order
   const varNames = [];
-  let regexStr = normPattern.replace(/\[([^\]]+)\]/g, (_, name) => {
-    varNames.push(name.trim());
-    return '(.+?)';
-  });
+  let regexStr = '';
+  const placeholder = /\[([^\]]+)\]/g;
+  let lastIndex = 0;
+  let match;
+  while ((match = placeholder.exec(normPattern)) !== null) {
+    regexStr += normPattern.slice(lastIndex, match.index).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    varNames.push(match[1].trim());
+    regexStr += '(.+?)';
+    lastIndex = match.index + match[0].length;
+  }
+  regexStr += normPattern.slice(lastIndex).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   // Anchor
   regexStr = '^' + regexStr + '$';
@@ -104,6 +111,32 @@ function matchPattern(pattern, input) {
   } catch (e) {
     return null;
   }
+}
+
+function matchPatternWithAliases(pattern, input, aliases) {
+  const placeholder = /\[([^\]]+)\]/g;
+  const variants = [pattern];
+  let match;
+  while ((match = placeholder.exec(pattern)) !== null) {
+    const phrases = aliases[(match[1] || '').trim().toLowerCase()];
+    if (!phrases || phrases.length === 0) continue;
+    const next = [];
+    for (const variant of variants) {
+      const start = variant.indexOf(match[0]);
+      for (const phrase of phrases) {
+        if (next.length >= 100) break;
+        next.push(variant.slice(0, start) + phrase + variant.slice(start + match[0].length));
+      }
+    }
+    if (next.length > 0) {
+      variants.splice(0, variants.length, ...next);
+    }
+  }
+  for (const variant of variants) {
+    const bindings = matchPattern(variant, input);
+    if (bindings) return bindings;
+  }
+  return null;
 }
 
 /**
@@ -146,6 +179,15 @@ function choose(options, counter) {
   return options[counter % options.length];
 }
 
+function safeImageSource(value) {
+  const source = String(value).trim();
+  if (/^https:\/\/[^\s"'<>]+$/i.test(source)) return source;
+  if (/^(?!\/\/)(?!.*(?:^|\/)\.\.(?:\/|$))[a-z0-9_./-]+\.(?:png|jpe?g|gif|webp)$/i.test(source)) {
+    return source;
+  }
+  return null;
+}
+
 /**
  * Evaluate a condition given bindings, memory, and reasoning engine.
  */
@@ -177,7 +219,11 @@ function evalCondition(cond, bindings, memory, engine) {
     }
 
     case 'not':
-      return !evalCondition(cond.inner, bindings, memory, engine);
+      if (cond.inner && cond.inner.type === 'is_a' && engine.isNotA) {
+        const subject = substitute('[' + cond.inner.subject + ']', bindings, memory);
+        return engine.isNotA(subject, cond.inner.object);
+      }
+      return false;
 
     default:
       return true;
@@ -245,10 +291,21 @@ function execAction(action, bindings, memory, engine, counter) {
     }
 
     case 'show_image':
-      return { text: null, explanation: '', image: escapeHtml(action.value) };
+      return { text: null, explanation: '', image: safeImageSource(action.value) };
 
     case 'show_button':
       return { text: null, explanation: '', button: escapeHtml(action.value) };
+
+    case 'ask':
+      return { text: substitute(action.value, bindings, memory), explanation: 'Rule asks: ' + action.value };
+
+    case 'score': {
+      const amount = Number(action.value);
+      const current = Number(memory.get('score')) || 0;
+      if (Number.isFinite(amount)) memory.set('score', String(current + amount));
+      const score = Number(memory.get('score')) || 0;
+      return { text: `Score: ${score}`, explanation: `Score is now ${score}.` };
+    }
 
     default:
       return { text: null, explanation: '' };
@@ -333,7 +390,7 @@ function createRuntime(program, opts) {
   const _createEngine = opts.createEngineFunc || createEngine;
   const _createMemory = opts.createMemoryFunc || createMemory;
 
-  let engine = _createEngine(program.facts || []);
+  let engine = _createEngine(program.facts || [], program.rules || []);
   let memory = _createMemory();
   let counter = 0;
   let lastExplanation = [];
@@ -348,7 +405,7 @@ function createRuntime(program, opts) {
 
   function reload(newProgram) {
     program = newProgram;
-    engine = _createEngine(program.facts || []);
+    engine = _createEngine(program.facts || [], program.rules || []);
     reset();
   }
 
@@ -442,12 +499,12 @@ function createRuntime(program, opts) {
     let bindings = null;
 
     if (rule.type !== 'fallback') {
-      bindings = matchPattern(rule.trigger, input);
+      bindings = matchPatternWithAliases(rule.trigger, input, program.aliases || {});
 
       // If primary trigger didn't match, try OR triggers
       if (!bindings && rule.orTriggers) {
         for (const orT of rule.orTriggers) {
-          bindings = matchPattern(orT, input);
+          bindings = matchPatternWithAliases(orT, input, program.aliases || {});
           if (bindings) break;
         }
       }
@@ -483,7 +540,7 @@ function createRuntime(program, opts) {
       if (r.image) images.push(r.image);
     }
 
-    if (texts.length === 0 && buttons.length === 0) return null;
+    if (texts.length === 0 && buttons.length === 0 && images.length === 0) return null;
 
     lastExplanation = explanation;
     return {
@@ -589,5 +646,5 @@ function createRuntime(program, opts) {
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = { createRuntime, escapeHtml, normaliseInput, matchPattern, substitute, evalArithmetic };
+  module.exports = { createRuntime, escapeHtml, normaliseInput, matchPattern, matchPatternWithAliases, substitute, evalArithmetic };
 }

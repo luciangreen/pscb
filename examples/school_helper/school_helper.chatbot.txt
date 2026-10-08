@@ -1,0 +1,15 @@
+My chatbot is called School Helper.
+School Helper is helpful.
+
+If someone says hello:
+    say Hello! I can help with school questions.
+If someone asks What is a noun?:
+    say A noun is a person, place, animal, or thing.
+If someone asks What is a verb?:
+    say A verb is an action word.
+If someone asks What is 7 times 8?:
+    say 56
+If someone asks What should I do if I feel stuck?:
+    say Try one small step, and ask a teacher or trusted grown-up for help.
+If I don't know:
+    say I don't know that yet. Ask a teacher or teach me the answer.

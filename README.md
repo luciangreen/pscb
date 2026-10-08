@@ -135,6 +135,7 @@ Variables use `[square brackets]` and match any text.
 | `examples/animal_bot/` | Animal facts and category reasoning |
 | `examples/quiz_bot/` | Simple question-and-answer quiz |
 | `examples/story_bot/` | Fictional pirate character |
+| `examples/school_helper/` | Friendly school and study helper |
 
 To load an example, click **⬆ Load** and pick the `.chatbot.txt` file.
 

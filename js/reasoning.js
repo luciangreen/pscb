@@ -11,9 +11,10 @@
  * @param {import('./parser').Fact[]} facts
  * @returns {object}
  */
-function createEngine(facts) {
+function createEngine(facts, rules) {
   const positive = [];
   const negative = [];
+  const implications = [];
 
   for (const f of facts) {
     if (f.type === 'negative') {
@@ -21,6 +22,21 @@ function createEngine(facts) {
     } else {
       positive.push(f);
     }
+  }
+
+  for (const rule of (rules || [])) {
+    if (rule.type === 'inference') {
+      for (const action of (rule.actions || [])) {
+        if (action.type === 'infer_is_a') {
+          implications.push({ subject: rule.ifCategory, object: action.category });
+        }
+      }
+    }
+  }
+
+  function nextCategories(category) {
+    return positive.filter(f => f.type === 'is_a' && f.subject === category).map(f => f.object)
+      .concat(implications.filter(r => r.subject === category).map(r => r.object));
   }
 
   /**
@@ -46,11 +62,9 @@ function createEngine(facts) {
       if (visited.has(current)) continue;
       visited.add(current);
 
-      for (const f of positive) {
-        if (f.type === 'is_a' && f.subject === current) {
-          if (f.object === category) return true;
-          if (!visited.has(f.object)) stack.push(f.object);
-        }
+      for (const next of nextCategories(current)) {
+        if (next === category) return true;
+        if (!visited.has(next)) stack.push(next);
       }
     }
 
@@ -71,11 +85,9 @@ function createEngine(facts) {
       if (visited.has(current)) continue;
       visited.add(current);
 
-      for (const f of positive) {
-        if (f.type === 'is_a' && f.subject === current) {
-          if (!result.includes(f.object)) result.push(f.object);
-          if (!visited.has(f.object)) stack.push(f.object);
-        }
+      for (const next of nextCategories(current)) {
+        if (!result.includes(next)) result.push(next);
+        if (!visited.has(next)) stack.push(next);
       }
     }
 
@@ -115,21 +127,26 @@ function createEngine(facts) {
       if (visited.has(current)) continue;
       visited.add(current);
 
-      for (const f of positive) {
-        if (f.type === 'is_a' && f.subject === current) {
-          const newPath = [...path, `${current} is a ${f.object}`];
-          if (f.object === category) {
-            return newPath;
-          }
-          stack.push([f.object, newPath]);
-        }
+      for (const next of nextCategories(current)) {
+        const isRule = implications.some(rule => rule.subject === current && rule.object === next);
+        const newPath = [...path, isRule
+          ? `Your rule says that anything that is a ${current} is also a ${next}.`
+          : `${current} is a ${next}`];
+        if (next === category) return newPath;
+        stack.push([next, newPath]);
       }
     }
 
     return steps;
   }
 
-  return { isA, categoriesOf, membersOf, explainIsA, facts: positive, negativeFacts: negative };
+  function isNotA(subject, category) {
+    subject = subject.trim().toLowerCase();
+    category = category.trim().toLowerCase();
+    return negative.some(f => f.subject === subject && f.object === category);
+  }
+
+  return { isA, isNotA, categoriesOf, membersOf, explainIsA, facts: positive, negativeFacts: negative };
 }
 
 if (typeof module !== 'undefined') {

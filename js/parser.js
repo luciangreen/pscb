@@ -170,9 +170,9 @@ function parseFact(line) {
     const m = stripped.match(p);
     if (m) {
       return {
-        type: 'is_a',
+        type: /^(?:the|my)\s/i.test(stripped) ? 'property' : 'is_a',
         subject: m[1].trim().toLowerCase(),
-        predicate: 'is_a',
+        predicate: /^(?:the|my)\s/i.test(stripped) ? 'property' : 'is_a',
         object: m[2].trim().toLowerCase()
       };
     }
@@ -201,7 +201,7 @@ function parseAction(line, lineNumber) {
     return { type: 'forget', value: t.slice(7).trim().replace(/[.!?]+$/, ''), lineNumber };
   }
   if (/^ask\s*:/i.test(t)) {
-    return { type: 'ask_start', lineNumber };
+    return { type: 'ask', value: t.replace(/^ask\s*:\s*/i, '').trim(), lineNumber };
   }
   if (/^score\s+/i.test(t)) {
     return { type: 'score', value: t.slice(6).trim(), lineNumber };
@@ -212,6 +212,10 @@ function parseAction(line, lineNumber) {
   }
   if (/^show\s+button\s+/i.test(t)) {
     return { type: 'show_button', value: t.replace(/^show\s+button\s+/i, '').trim(), lineNumber };
+  }
+  const inferenceMatch = t.match(/^it\s+is\s+(?:an?\s+)?([a-zA-Z][a-zA-Z0-9 _'-]*)\.?$/i);
+  if (inferenceMatch) {
+    return { type: 'infer_is_a', category: inferenceMatch[1].trim().toLowerCase(), lineNumber };
   }
   if (/^add\s+\[([^\]]+)\]\s+and\s+\[([^\]]+)\]/i.test(t)) {
     const m = t.match(/^add\s+\[([^\]]+)\]\s+and\s+\[([^\]]+)\]/i);
@@ -280,13 +284,23 @@ function parseCondition(text) {
   const m4 = t.match(/^if\s+\[([^\]]+)\]\s+equals?\s+(.+?)\.?\s*$/i);
   if (m4) return { type: 'comparison', subject: m4[1].trim(), operator: '=', value: m4[2].trim() };
 
-  // if [thing] is an animal
-  const m5 = t.match(/^if\s+\[([^\]]+)\]\s+is\s+(?:an?\s+)?([a-zA-Z][a-zA-Z0-9 _'-]*)\.?\s*$/i);
-  if (m5) return { type: 'is_a', subject: m5[1].trim(), object: m5[2].trim().toLowerCase() };
+  // if the colour is brown / if their favourite colour is blue
+  const memoryMatch = t.match(/^if\s+(?:their|the)\s+([a-zA-Z][a-zA-Z0-9 _]*?)\s+is\s+([a-zA-Z][a-zA-Z0-9 _'-]*)\.?\s*$/i);
+  if (memoryMatch) {
+    return {
+      type: 'memory_eq',
+      key: memoryMatch[1].trim().toLowerCase().replace(/ /g, '_'),
+      value: memoryMatch[2].trim().toLowerCase()
+    };
+  }
 
+  // if [thing] is an animal
   // if [thing] is not an animal
   const m6 = t.match(/^if\s+\[([^\]]+)\]\s+is\s+not\s+(?:an?\s+)?([a-zA-Z][a-zA-Z0-9 _'-]*)\.?\s*$/i);
   if (m6) return { type: 'not', inner: { type: 'is_a', subject: m6[1].trim(), object: m6[2].trim().toLowerCase() } };
+
+  const m5 = t.match(/^if\s+\[([^\]]+)\]\s+is\s+(?:an?\s+)?([a-zA-Z][a-zA-Z0-9 _'-]*)\.?\s*$/i);
+  if (m5) return { type: 'is_a', subject: m5[1].trim(), object: m5[2].trim().toLowerCase() };
 
   // if their [key] is [value]
   const m7 = t.match(/^if\s+their\s+([a-zA-Z][a-zA-Z0-9 _]*?)\s+is\s+([a-zA-Z][a-zA-Z0-9 _'-]*)\.?\s*$/i);
@@ -441,6 +455,7 @@ function parse(source) {
         if (andMatch) {
           const cond = parseCondition('if ' + andMatch[1]);
           if (cond) rule.conditions.push(cond);
+          else diag('warning', `I don't understand this condition: "${peek}"`, 'Try: and [animal] is a dog:');
           i++;
           continue;
         }
@@ -508,7 +523,7 @@ function parse(source) {
         f.predicate === fact.predicate &&
         f.object !== fact.object &&
         f.type === fact.type &&
-        fact.type !== 'negative'
+        fact.type === 'property'
       );
       if (existing) {
         diag('warning',
