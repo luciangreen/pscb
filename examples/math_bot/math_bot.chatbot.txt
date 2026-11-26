@@ -2,7 +2,7 @@ My chatbot is called Maths Helper.
 Maths Helper is helpful.
 
 If someone says hello:
-    say Hello! I can help with maths. Ask me something like "What is 5 + 3?"
+    say Hello! I can help with maths. Ask me something like "What is 5 plus 3?"
 If someone asks What is [a] plus [b]?:
     add [a] and [b].
     say [a] plus [b] equals [answer].
