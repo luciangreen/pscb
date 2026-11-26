@@ -151,6 +151,17 @@ function substitute(text, bindings, memory) {
   });
 }
 
+const DIVIDE_BY_ZERO_TEXT = 'You cannot divide by zero. Try dividing by another number.';
+
+/**
+ * Write a result the way a child would: whole numbers as they are, and
+ * decimals rounded to at most ten places, so 0.1 + 0.2 shows as 0.3.
+ */
+function formatNumber(value) {
+  if (Number.isInteger(value)) return String(value);
+  return String(parseFloat(value.toFixed(10)));
+}
+
 /**
  * Evaluate an arithmetic expression in a string like "3 + 5".
  * Returns the result as a number, or null if not arithmetic.
@@ -264,15 +275,20 @@ function execAction(action, bindings, memory, engine, counter) {
       const a = parseFloat(substitute('[' + action.a + ']', bindings, memory));
       const b = parseFloat(substitute('[' + action.b + ']', bindings, memory));
       if (!isNaN(a) && !isNaN(b)) {
+        if (action.op === 'divide' && b === 0) {
+          // A child-friendly message instead of the rest of the rule's reply.
+          memory.set('answer', '');
+          return { text: DIVIDE_BY_ZERO_TEXT, explanation: 'Arithmetic: divide by zero is not possible', halt: true };
+        }
         let result;
         switch (action.op) {
           case 'add': result = a + b; break;
           case 'subtract': result = a - b; break;
           case 'multiply': result = a * b; break;
-          case 'divide': result = b !== 0 ? a / b : 'undefined'; break;
+          case 'divide': result = a / b; break;
           default: result = 0;
         }
-        memory.set('answer', String(result));
+        memory.set('answer', formatNumber(result));
       }
       return { text: null, explanation: `Arithmetic: ${action.op}` };
     }
@@ -321,10 +337,14 @@ const ARITHMETIC_RE = /^what\s+is\s+([\d\s+\-*/×÷().]+)\??$/i;
 function tryArithmetic(input) {
   const m = normaliseInput(input).match(ARITHMETIC_RE);
   if (m) {
-    const result = evalArithmetic(m[1].trim());
+    const expr = m[1].trim();
+    if (/[/÷]\s*0+(\.0*)?\s*$/.test(expr)) {
+      return { text: DIVIDE_BY_ZERO_TEXT, explanation: `Built-in arithmetic (not one of your rules): ${expr}` };
+    }
+    const result = evalArithmetic(expr);
     if (result !== null) {
-      const formatted = Number.isInteger(result) ? String(result) : result.toFixed(4).replace(/\.?0+$/, '');
-      return { text: formatted, explanation: `Built-in arithmetic: ${m[1].trim()} = ${formatted}` };
+      const formatted = formatNumber(result);
+      return { text: formatted, explanation: `Built-in arithmetic (not one of your rules): ${expr} = ${formatted}` };
     }
   }
   return null;
@@ -532,6 +552,12 @@ function createRuntime(program, opts) {
 
     for (const action of (actions || [])) {
       const r = execAction(action, bindings, memory, engine, counter);
+      if (r.halt) {
+        texts.length = 0;
+        texts.push(r.text);
+        if (r.explanation) explanation.push(r.explanation);
+        break;
+      }
       if (r.text !== null && r.text !== undefined && r.text !== '') {
         texts.push(r.text);
       }

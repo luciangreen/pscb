@@ -185,3 +185,10 @@ Requires Node.js. No other dependencies.
 - No server, API key, or cloud service needed.
 
 See [PROGRAM_REQUIREMENTS.md](PROGRAM_REQUIREMENTS.md) for the full specification.
+
+## Friendly maths
+
+Dividing by zero answers "You cannot divide by zero. Try dividing by another
+number." instead of a reply containing "undefined". Decimal answers are
+rounded to at most ten places, so 0.1 plus 0.2 is 0.3. When the app answers a
+sum itself, not from one of the child's rules, the explanation says so.

@@ -660,6 +660,41 @@ test('normaliseInput: contractions expanded', () => {
   assertIncludes(normaliseInput("what's"), 'what is');
 });
 
+
+// ===========================================================================
+// Friendly arithmetic answers
+// ===========================================================================
+
+const mathBotSource = require('fs').readFileSync(path.join(__dirname, '..', 'examples', 'math_bot', 'math_bot.chatbot.txt'), 'utf8');
+function mathBot() {
+  return createRuntime(parse(mathBotSource), { createEngineFunc: createEngine, createMemoryFunc: createMemory });
+}
+function replyText(r) { return typeof r === 'object' && r !== null ? (r.reply || r.text || '') : String(r); }
+
+test('Maths: dividing by zero gets a friendly message', () => {
+  const t = replyText(mathBot().chat('What is 10 divided by 0?'));
+  assertIncludes(t, 'cannot divide by zero');
+});
+
+test('Maths: decimals are rounded sensibly', () => {
+  assertEqual(replyText(mathBot().chat('What is 0.1 plus 0.2?')), '0.1 plus 0.2 equals 0.3.');
+});
+
+test('Maths: ordinary division still works', () => {
+  assertEqual(replyText(mathBot().chat('What is 10 divided by 4?')), '10 divided by 4 equals 2.5.');
+});
+
+test('Maths: built-in division by zero is friendly too', () => {
+  assertIncludes(replyText(mathBot().chat('What is 7 / 0?')), 'cannot divide by zero');
+});
+
+test('Maths: greeting suggests a question the rules answer', () => {
+  const bot = mathBot();
+  const greeting = replyText(bot.chat('hello'));
+  assertIncludes(greeting, 'What is 5 plus 3?');
+  assertEqual(replyText(bot.chat('What is 5 plus 3?')), '5 plus 3 equals 8.');
+});
+
 // ===========================================================================
 // Final report
 // ===========================================================================
